@@ -63,7 +63,29 @@ std::string Adventure::extendPath(const std::string& path, int choiceNumber) con
 //   - Build the whole story with readScene. The first scene's label is "START".
 //   - If anything failed, return false. Otherwise give the story to tree_.
 bool Adventure::load(const std::string& fileName) {
-    return false;
+    std::ifstream in(fileName);
+
+    if (!in.is_open()) {
+        std::cout << "Error: couldn't open " << fileName << std::endl;
+        return false;
+    }
+
+    std::string value;
+
+    if (!readField(in, "START_HP" , value)) {
+        return false;
+    }
+
+    startHp_ = std::stoi(value);
+
+    Scene<Moment>* root = readScene(in, "START");
+
+    if (root == nullptr) {
+        return false;
+    }
+
+    tree_.setRoot(root);
+    return true;
 }
 
 // TODO 11: read ONE scene and everything below it. Return it.
@@ -74,8 +96,74 @@ bool Adventure::load(const std::string& fileName) {
 //   - Each choice is a LABEL line followed by a whole scene.
 //   - If anything goes wrong at any depth, return nullptr
 //     and make sure nothing you already built is leaked.
-Scene<Moment>* Adventure::readScene(std::ifstream& in, const std::string& label) {
-    return nullptr;
+Scene<Moment>* Adventure::readScene(
+    std::ifstream& in, const std::string& label) {
+
+    std::string text;
+    std::string hpText;
+    std::string lootText;
+    std::string item;
+    std::string choicesText;
+
+    if (!readField(in, "SCENE", text)) {
+        return nullptr;
+    }
+
+    if (!readField(in, "HP", hpText)) {
+        return nullptr;
+    }
+
+    if (!readField(in, "LOOT", lootText)) {
+        return nullptr;
+    }
+
+    if (!readField(in, "ITEM", item)) {
+        return nullptr;
+    }
+
+    if (!readField(in, "CHOICES", choicesText)) {
+        return nullptr;
+    }
+
+    int hpChange = std::stoi(hpText);
+    int loot = std::stoi(lootText);
+    int numChoices = std::stoi(choicesText);
+
+    if (numChoices < 0 ||
+        numChoices > Scene<Moment>::MAX_CHOICES) {
+
+        std::cout << "Error: scene \"" << text
+                  << "\" has " << numChoices
+                  << " choices. The limit is 3." << std::endl;
+
+        return nullptr;
+        }
+
+    Moment* data = new Moment(
+        text, label, hpChange, loot, item);
+
+    Scene<Moment>* scene =
+        new Scene<Moment>(data, numChoices);
+
+    for (int i = 0; i < numChoices; i++) {
+        std::string childLabel;
+
+        if (!readField(in, "LABEL", childLabel)) {
+            delete scene;
+            return nullptr;
+        }
+
+        Scene<Moment>* child = readScene(in, childLabel);
+
+        if (child == nullptr) {
+            delete scene;
+            return nullptr;
+        }
+
+        scene->setChoice(i, child);
+    }
+
+    return scene;
 }
 
 // ===================== PLAYING =====================
@@ -87,9 +175,25 @@ Scene<Moment>* Adventure::readScene(std::ifstream& in, const std::string& label)
 //     and ask again.
 //   - If the input ends (getline fails), return 0.
 int Adventure::askChoice(int numChoices) {
-    return 0;
-}
+    std::string input;
 
+    while (true) {
+        std::cout << "Your choice: ";
+
+        if (!std::getline(std::cin, input)) {
+            return 0;
+        }
+
+        for (int choice = 1; choice <= numChoices; choice++) {
+            if (input == std::to_string(choice)) {
+                return choice;
+            }
+        }
+
+        std::cout << "Please type a number from 1 to "
+                  << numChoices << "." << std::endl;
+    }
+}
 // TODO 13: play the story once from the start.
 // Every time the player ENTERS a scene, in this order:
 //   1. Add its HP change to hp and its loot to loot.
@@ -108,6 +212,75 @@ int Adventure::askChoice(int numChoices) {
 // and then print the bag.
 // The bag is a List<Item>. Start with HP = startHp_ and loot = 0.
 void Adventure::play() {
+    Scene<Moment>* scene = tree_.getRoot();
+
+    if (scene == nullptr) {
+        return;
+    }
+
+    int hp = startHp_;
+    int loot = 0;
+    List<Item> bag;
+
+    while (scene != nullptr) {
+        Moment* moment = scene->getData();
+
+        hp += moment->getHpChange();
+        loot += moment->getLoot();
+
+        std::cout << "----------------------------------------"
+                  << std::endl;
+        std::cout << moment->getText() << std::endl;
+
+        if (moment->hasItem()) {
+            Item item(moment->getItem());
+
+            if (bag.search(item)) {
+                std::cout << "You already have: "
+                          << moment->getItem() << std::endl;
+            } else {
+                bag.addFront(new Item(moment->getItem()));
+
+                std::cout << "You picked up: "
+                          << moment->getItem() << std::endl;
+            }
+        }
+
+        std::cout << "HP: " << hp
+                  << "  Loot: " << loot << std::endl;
+
+        if (hp <= 0) {
+            std::cout << "Your HP hit 0. GAME OVER."
+                      << std::endl;
+            break;
+        }
+
+        if (scene->isEnding()) {
+            std::cout << "THE END." << std::endl;
+            break;
+        }
+
+        for (int i = 0; i < scene->getNumChoices(); i++) {
+            std::cout << "[" << i + 1 << "] "
+                      << scene->getChoice(i)->getData()->getLabel()
+                      << std::endl;
+        }
+
+        int choice = askChoice(scene->getNumChoices());
+
+        if (choice == 0) {
+            return;
+        }
+
+        scene = scene->getChoice(choice - 1);
+    }
+
+    std::cout << "Final HP: " << hp
+              << "  Final loot: " << loot << std::endl;
+    std::cout << "Inventory (" << bag.size()
+              << " items):" << std::endl;
+
+    bag.print();
 }
 
 // ===================== ANALYZING =====================
@@ -117,10 +290,16 @@ void Adventure::play() {
 //   Endings: <count>
 //   Longest playthrough: <height> choices
 void Adventure::printStats() const {
+    std::cout << "Scenes: " << tree_.countScenes() << std::endl;
+
+    std::cout << "Endings: " << tree_.countEndings() << std::endl;
+
+    std::cout << "Longest playthrough: " << tree_.height() << " choices" << std::endl;
 }
 
 // TODO 15: print every ending in the story, one per line.
 void Adventure::printSpoilers() const {
+    printEndings(tree_.getRoot(), "");
 }
 
 // TODO 16: print every ending below scene.
@@ -129,7 +308,32 @@ void Adventure::printSpoilers() const {
 //   Path <path>: <scene text>
 // If the very first scene is an ending, print "Path (start): <scene text>".
 // Endings print in order: choice 1 before choice 2 before choice 3.
-void Adventure::printEndings(Scene<Moment>* scene, const std::string& path) const {
+void Adventure::printEndings(
+    Scene<Moment>* scene, const std::string& path) const {
+
+    if (scene == nullptr) {
+        return;
+    }
+
+    if (scene->isEnding()) {
+        std::cout << "Path ";
+
+        if (path.empty()) {
+            std::cout << "(start)";
+        } else {
+            std::cout << path;
+        }
+
+        std::cout << ": "
+                  << scene->getData()->getText() << std::endl;
+        return;
+    }
+
+    for (int i = 0; i < scene->getNumChoices(); i++) {
+        printEndings(
+            scene->getChoice(i),
+            extendPath(path, i + 1));
+    }
 }
 
 // TODO 17: the greedy advisor.
@@ -144,6 +348,47 @@ void Adventure::printEndings(Scene<Moment>* scene, const std::string& path) cons
 //     Loot: <loot>
 //     Result: died               (or "Result: reached an ending")
 void Adventure::greedyRun() const {
+    Scene<Moment>* scene = tree_.getRoot();
+
+    if (scene == nullptr) {
+        return;
+    }
+    int hp = startHp_;
+    int loot = 0;
+    std::string path;
+
+    while (scene != nullptr) {
+        hp += scene->getData()->getHpChange();
+        loot += scene->getData()->getLoot();
+
+        if (hp <= 0 || scene->isEnding()) {
+            break;
+        }
+
+        int bestIndex = 0;
+
+        for (int i = 1; i < scene->getNumChoices(); i++) {
+            int candidateLoot = scene->getChoice(i)->getData()->getLoot();
+
+            int currentBestLoot = scene->getChoice(i)->getData()->getLoot();
+
+            if (candidateLoot > currentBestLoot) {
+                bestIndex = i;
+            }
+        }
+
+        path = extendPath(path, bestIndex + 1);
+        scene = scene->getChoice(bestIndex);
+    }
+    std::cout << "Ooh greedy greedy advisor" << std::endl;
+    std::cout << "  Path: " << path << std::endl;
+    std::cout << "  Loot: " << loot << std::endl;
+
+    if (hp <= 0) {
+        std::cout << " Result: Lol u died try again" << std::endl;
+    } else {
+        std::cout << " Result: WOOO u got an ending" << std::endl;
+    }
 }
 
 // TODO 18: the best total loot you can collect from scene down to an ending,
@@ -151,8 +396,53 @@ void Adventure::greedyRun() const {
 //   - Return -1 if every way down from here kills you.
 //   - Put the path of the best run into bestPath.
 //   - Must be recursive and look at every choice.
-int Adventure::bestLoot(Scene<Moment>* scene, int hp, const std::string& path, std::string& bestPath) const {
-    return -1;
+int Adventure::bestLoot(
+    Scene<Moment>* scene,
+    int hp,
+    const std::string& path,
+    std::string& bestPath) const {
+
+    if (scene == nullptr) {
+        return -1;
+    }
+
+    Moment* moment = scene->getData();
+
+    hp += moment->getHpChange();
+
+    if (hp <= 0) {
+        return -1;
+    }
+
+    if (scene->isEnding()) {
+        bestPath = path;
+        return moment->getLoot();
+    }
+
+    int bestChildLoot = -1;
+    std::string winningPath;
+
+    for (int i = 0; i < scene->getNumChoices(); i++) {
+        std::string childBestPath;
+
+        int childLoot = bestLoot(
+            scene->getChoice(i),
+            hp,
+            extendPath(path, i + 1),
+            childBestPath);
+
+        if (childLoot > bestChildLoot) {
+            bestChildLoot = childLoot;
+            winningPath = childBestPath;
+        }
+    }
+
+    if (bestChildLoot == -1) {
+        return -1;
+    }
+
+    bestPath = winningPath;
+    return moment->getLoot() + bestChildLoot;
 }
 
 // TODO 19: the optimal advisor. Use bestLoot from the first scene.
@@ -165,4 +455,20 @@ int Adventure::bestLoot(Scene<Moment>* scene, int hp, const std::string& path, s
 //   Optimal advisor
 //     Result: no path survives this story
 void Adventure::optimalRun() const {
+    std::string bestPath;
+
+    int loot = bestLoot(
+        tree_.getRoot(), startHp_, "", bestPath);
+
+    std::cout << "OOH Optimal advisor" << std::endl;
+
+    if (loot == -1) {
+        std::cout << "  Result: no path survives this lol"
+                  << std::endl;
+        return;
+    }
+
+    std::cout << "  Path: " << bestPath << std::endl;
+    std::cout << "  Loot: " << loot << std::endl;
+    std::cout << "  Result: u reached an ending!!" << std::endl;
 }
