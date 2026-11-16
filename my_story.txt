@@ -1,6 +1,102 @@
 START_HP 10
-SCENE Replace this file with your own story.
+SCENE Mom asks you to collect the last of Dad's stuff before the old house gets sold. You arrive after dark. His bedroom light turns on as you reach the porch. Dad died eight years ago. Your phone buzzes. Mom: "Stay downstairs. I forgot to tell you something..."
 HP 0
 LOOT 0
 ITEM none
-CHOICES 0
+CHOICES 3
+LABEL Go upstairs toward the light
+  SCENE The stairs creak under you. A nail cuts your ankle (lmao). Dad's watch sits on the dresser, beside a stack of cash. Someone is in his bed, facing the wall. You take the watch. It is warm. wtf???
+  HP -2
+  LOOT 8
+  ITEM Stopped Watch
+  CHOICES 2
+  LABEL Take the cash beside the bed
+    SCENE You pocket the cash. The person in the bed whispers your childhood nickname. You lean closer. Whatever turns over has Dad's face, but it opens its mouth before the voice starts. Downstairs, your phone keeps ringing.
+    HP -10
+    LOOT 15
+    ITEM Cash Bundle
+    CHOICES 0
+  LABEL Climb out through the bedroom window
+    SCENE You drop from the porch roof and hurt your shoulder. You make it to the car with the watch. Every time its second hand moves, you hear moving in the back seat.
+    HP -2
+    LOOT 1
+    ITEM none
+    CHOICES 0
+LABEL Wait in the kitchen and read Mom's message
+  SCENE Mom: There is a spare key in the kitchen. Get the toolbox from the cellar. If you hear your father upstairs, please do not answer him. You find the key and a coin beside the sink. You have never heard Mom joke about him.
+  HP 0
+  LOOT 1
+  ITEM House Key
+  CHOICES 2
+  LABEL Look for the cellar entrance in the pantry
+    SCENE The pantry latch snaps against your hand. A second copy of the house key hangs inside. Behind the shelves is a narrow door you do not remember. Upstairs, someone drags a chair across the floor, then stops directly above you.
+    HP -1
+    LOOT 1
+    ITEM House Key
+    CHOICES 2
+    LABEL Open the narrow door
+      SCENE You squeeze through the gap and scrape your arms on exposed nails. A flashlight and a few old coins lie on a step. At the bottom, the cellar door is open. Dad's voice comes from upstairs: You never said goodbye.
+      HP -2
+      LOOT 1
+      ITEM Flashlight
+      CHOICES 2
+      LABEL Keep going down to the cellar
+        SCENE You slip on the last step. Dad's toolbox is where Mom said it would be. Inside are his real watch and a photo of you asleep on his shoulder. The back is dated the day you were born. From the dark behind you, his voice asks you to stay.
+        HP -1
+        LOOT 2
+        ITEM Dad's Watch
+        CHOICES 2
+        LABEL Take the toolbox and leave without answering
+          SCENE You carry the toolbox outside. Mom is waiting by the gate, crying. In Dad's old work coat, folded inside the box, you find the money he saved for your first car. As you shut the gate, the upstairs light goes out. His watch starts ticking.
+          HP -1
+          LOOT 20
+          ITEM none
+          CHOICES 0
+        LABEL Tell him you can stay for a little while
+          SCENE You sit on the cellar step until your legs go numb. Dad talks about the day in the photo. He gets every detail right except your name. At dawn, you escape with a few things from the toolbox. That night, you hear his chair move upstairs in your apartment.
+          HP -3
+          LOOT 4
+          ITEM Old Photograph
+          CHOICES 0
+      LABEL Push through the side door instead
+        SCENE The swollen door gives way and you fall down the outside steps. You leave with a flashlight and a small tin of coins. From the road, you see someone watching from the bedroom. They raise a hand. You keep yours on the wheel.
+        HP -3
+        LOOT 2
+        ITEM none
+        CHOICES 0
+    LABEL Call upstairs and ask if it is really Dad
+      SCENE He answers with the song he used to sing when you could not sleep. You step out of the pantry. The house fills with the smell of his coat. By morning, Mom finds your keys on the stairs. There is one extra person in every family photograph.
+      HP -10
+      LOOT 12
+      ITEM none
+      CHOICES 0
+  LABEL Leave through the kitchen door
+    SCENE You take a few coins from the counter and leave the toolbox behind. Mom meets you on the pavement and says you did the right thing. Neither of you looks at the bedroom window. On the drive home, she asks whether he sounded older.
+    HP 0
+    LOOT 1
+    ITEM none
+    CHOICES 0
+LABEL Stay on the porch and call Mom
+  SCENE You find your old battery pack in a box by the door and connect your dying phone. Mom answers before it rings. She tells you to walk to the gate. Behind you, Dad knocks on the inside of the front door.
+  HP 0
+  LOOT 3
+  ITEM Battery Pack
+  CHOICES 2
+  LABEL Listen to Mom and walk toward the gate
+    SCENE The porch light bursts as you step away, cutting your hand. Mom says she can see you from her car. Behind you, Dad calls out that she always did like leaving him alone. You almost turn around.
+    HP -2
+    LOOT 1
+    ITEM none
+    CHOICES 1
+    LABEL Keep walking without looking back
+      SCENE You stumble into Mom's arms. She gives you the envelope of cash from Dad's desk; she collected it earlier. In her car, she admits that she heard him last week too. You drive home together with the radio off.
+      HP -1
+      LOOT 3
+      ITEM Envelope
+      CHOICES 0
+  LABEL Hang up and run to your car
+    SCENE You cut your palm fumbling the keys, but get the engine started. The battery pack is all you brought out. At the first red light, your phone plays a new voicemail. It is Dad asking whether you got home safely.
+    HP -1
+    LOOT 0
+    ITEM none
+    CHOICES 0
